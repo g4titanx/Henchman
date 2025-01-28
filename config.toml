@@ -1,11 +1,13 @@
-# The email that you used to sign up the Agents twitter account. Only support cock.li emails at the moment
-email = ""
-# The password to log into this email. The first thing the ai agent does is change this password 
-email_password = ""
 # The username to the Agents twitter account
 x_username = ""
-# The starter password to the Agents twitter account. The agent changes this first thing
-x_password = ""
+# The consumer key from your Twitter API app settings
+x_consumer_key = ""
+# The consumer secret from your Twitter API app settings
+x_consumer_secret = ""
+# The access token generated for your Twitter account
+x_access_token = ""
+# The access token secret generated for your Twitter account
+x_access_token_secret = ""
 # The URL an ethereum rpc provider. The agent uses block numbers from here to decide when to unlock the account
 eth_rpc_url = ""
 # The path to the Agents DB, this is fully sealed by the SGX before being written to
