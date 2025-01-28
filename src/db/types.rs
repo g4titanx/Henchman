@@ -14,7 +14,7 @@ pub struct Embedding {
     pub data: Vec<f32>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MemoryData {
     pub id: u128,
     pub score: u16,

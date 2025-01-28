@@ -65,6 +65,24 @@ impl Database {
         collection_name: &str,
         memories: Vec<Memory>,
     ) -> Result<()> {
+        // First, try to insert all memory data
+        let mut inserted_ids = Vec::new();
+        for memory in &memories {
+            match self.insert_memory_data(memory.data.clone()) {
+                Ok(_) => inserted_ids.push(memory.data.id),
+                Err(e) => {
+                    // Roll back any successful inserts
+                    for id in inserted_ids {
+                        let cf = self.kv_db.cf_handle(MEMORY_DATA)
+                            .expect("failed to get memory data cf handle");
+                        let _ = self.kv_db.delete_cf(&cf, id.to_le_bytes());
+                    }
+                    return Err(e);
+                }
+            }
+        }
+    
+        // If all memory data is inserted, try to upsert points
         let points: Vec<PointStruct> = memories
             .iter()
             .map(|m| {
@@ -80,16 +98,22 @@ impl Database {
                 PointStruct::new(id.to_string(), m.embedding.data.clone(), payload)
             })
             .collect();
-        self.vec_db_client
+    
+        match self.vec_db_client
             .upsert_points(UpsertPointsBuilder::new(collection_name, points))
-            .await?;
-        // TODO: we should make this atomic. If inserting the memory data fails, we remove the
-        // embedding etc.
-        for memory in memories {
-            self.insert_memory_data(memory.data)?;
+            .await
+        {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                // Roll back memory data inserts on vector db failure
+                for id in inserted_ids {
+                    let cf = self.kv_db.cf_handle(MEMORY_DATA)
+                        .expect("Failed to get memory data cf handle");
+                    let _ = self.kv_db.delete_cf(&cf, id.to_le_bytes());
+                }
+                Err(anyhow!("Failed to upsert vectors: {}", e))
+            }
         }
-
-        Ok(())
     }
 
     pub async fn get_k_most_similar_memories(
