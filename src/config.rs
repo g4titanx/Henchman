@@ -6,10 +6,11 @@ const CONFIG: &str = include_str!("../config.toml");
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Config {
-    pub email: String,
-    pub email_password: String,
     pub x_username: String,
-    pub x_password: String,
+    pub x_consumer_key: String,
+    pub x_consumer_secret: String,
+    pub x_access_token: String,
+    pub x_access_token_secret: String,
     pub eth_rpc_url: String,
     pub kv_db_path: String,
     pub min_storing_memory_score: u16,

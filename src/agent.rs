@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use std::time::UNIX_EPOCH;
 use std::{collections::HashMap, time::SystemTime};
 
-use crate::encumber::XAccountDetails;
 use crate::env::ENV;
+use crate::twitter::TwitterCredentials;
 use crate::{
     config::Config,
     db::{
@@ -42,33 +42,24 @@ pub struct Agent {
 
 impl Agent {
     pub async fn new(
-        account_details: XAccountDetails,
+        credentials: TwitterCredentials,
         config: Config,
         eth_private_key: SecretKey,
         prompts: Prompts,
     ) -> Result<Self> {
         let agent_config = AgentConfig::from(&config);
-
-        let XAccountDetails {
-            x_consumer_key,
-            x_consumer_secret,
-            x_access_token,
-            x_access_token_secret,
-            x_username,
-            ..
-        } = account_details;
-
         let env = ENV.get().expect("unreachable");
 
         let twitter_client = TwitterClient::new(
             X_API_URL.into(),
-            x_consumer_key,
-            x_consumer_secret,
-            x_access_token,
-            x_access_token_secret,
+            credentials.consumer_key,
+            credentials.consumer_secret,
+            credentials.access_token,
+            credentials.access_token_secret,
         );
+
         let user_id = twitter_client
-            .get_user_info_by_username(&x_username)
+            .get_user_info_by_username(&credentials.username)
             .await?
             .id;
 

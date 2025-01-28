@@ -10,6 +10,15 @@ use crate::twitter::api_types::ApiResponse;
 
 use self::api_types::{FollowData, SentTweet, TimelineResponse, Tweet, TweetsResponse, User};
 
+#[derive(Clone)]
+pub struct TwitterCredentials {
+    pub username: String,
+    pub consumer_key: String,
+    pub consumer_secret: String,
+    pub access_token: String,
+    pub access_token_secret: String,
+}
+
 pub struct TwitterClient {
     client: Client<Signer<'static, Secrets<'static>, DefaultSM>>,
     base_url: String,
