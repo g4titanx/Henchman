@@ -1,3 +1,5 @@
+use crate::config::HyperbolicConfig;
+
 use anyhow::{anyhow, Result};
 use reqwest::Client;
 
@@ -20,10 +22,9 @@ impl HyperbolicClient {
         }
     }
 
-    pub async fn generate_text(&self, context: &str, prompt: &str) -> Result<ApiResponse> {
+    pub async fn generate_text(&self, context: &str, prompt: &str, config: &HyperbolicConfig) -> Result<ApiResponse> {
         let url = format!("{}/chat/completions", self.base_url);
-
-        // TODO: add these params to the config
+    
         let body = serde_json::json!({
             "messages": [
                 {
@@ -35,11 +36,11 @@ impl HyperbolicClient {
                     "content": prompt
                 }
             ],
-            "model": "meta-llama/Meta-Llama-3.1-70B-Instruct",
-            "max_tokens": 512,
-            "temperature": 1,
-            "top_p": 0.95,
-            "top_k": 40,
+            "model": config.model,
+            "max_tokens": config.max_tokens,
+            "temperature": config.temperature,
+            "top_p": config.top_p,
+            "top_k": config.top_k,
             "stream": false,
         });
 
@@ -63,6 +64,7 @@ impl HyperbolicClient {
 #[cfg(test)]
 mod tests {
     use crate::hyperbolic::HyperbolicClient;
+    use crate::config::HyperbolicConfig;
 
     #[ignore]
     #[tokio::test]
@@ -71,10 +73,19 @@ mod tests {
         let hyperbolic_api_key = "".to_string();
         let client = HyperbolicClient::new(hyperbolic_api_key, base_url);
 
+        let config = HyperbolicConfig {
+            model: "meta-llama/Meta-Llama-3.1-70B-Instruct".to_string(),
+            max_tokens: 512,
+            temperature: 1.0,
+            top_p: 0.95,
+            top_k: 40,
+        };
+
         let res = client
             .generate_text(
                 "hey shitalik, when does ethereum go to zero?",
                 "write a witty response to this tweet",
+                &config,
             )
             .await
             .unwrap();

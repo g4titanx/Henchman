@@ -5,6 +5,15 @@ use serde::{Deserialize, Serialize};
 const CONFIG: &str = include_str!("../config.toml");
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct HyperbolicConfig {
+    pub model: String,
+    pub max_tokens: u32,
+    pub temperature: f32,
+    pub top_p: f32,
+    pub top_k: u32,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Config {
     pub x_username: String,
     pub x_consumer_key: String,
@@ -24,6 +33,7 @@ pub struct Config {
     pub scroll_duration: Option<(u64, u64)>,
     pub run_sleep: Option<(u64, u64)>,
     pub release_credentials: u64,
+    pub hyperbolic: HyperbolicConfig,
 }
 
 impl Config {

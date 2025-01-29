@@ -73,7 +73,9 @@ impl Database {
                 Err(e) => {
                     // Roll back any successful inserts
                     for id in inserted_ids {
-                        let cf = self.kv_db.cf_handle(MEMORY_DATA)
+                        let cf = self
+                            .kv_db
+                            .cf_handle(MEMORY_DATA)
                             .expect("failed to get memory data cf handle");
                         let _ = self.kv_db.delete_cf(&cf, id.to_le_bytes());
                     }
@@ -81,7 +83,7 @@ impl Database {
                 }
             }
         }
-    
+
         // If all memory data is inserted, try to upsert points
         let points: Vec<PointStruct> = memories
             .iter()
@@ -98,8 +100,9 @@ impl Database {
                 PointStruct::new(id.to_string(), m.embedding.data.clone(), payload)
             })
             .collect();
-    
-        match self.vec_db_client
+
+        match self
+            .vec_db_client
             .upsert_points(UpsertPointsBuilder::new(collection_name, points))
             .await
         {
@@ -107,7 +110,9 @@ impl Database {
             Err(e) => {
                 // Roll back memory data inserts on vector db failure
                 for id in inserted_ids {
-                    let cf = self.kv_db.cf_handle(MEMORY_DATA)
+                    let cf = self
+                        .kv_db
+                        .cf_handle(MEMORY_DATA)
                         .expect("Failed to get memory data cf handle");
                     let _ = self.kv_db.delete_cf(&cf, id.to_le_bytes());
                 }
@@ -203,7 +208,7 @@ impl Database {
             .expect("failed to get memory data cf handle");
         let data_bytes = bincode::serialize(&data)?;
         self.kv_db
-            .put_cf(&cf, data.id.to_le_bytes(), &data_bytes)
+            .put_cf(&cf, data.id.to_le_bytes(), data_bytes)
             .map_err(|e| anyhow!("{e:?}"))
     }
 

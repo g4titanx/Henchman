@@ -28,3 +28,15 @@ num_recent_posts = 5
 min_mention_score = 5
 # in seconds how long the bot will run before handing over the account credentials
 release_credentials = 604800
+
+[hyperbolic]
+# The model to use for text generation
+model = "meta-llama/Meta-Llama-3.1-70B-Instruct"
+# Maximum number of tokens to generate
+max_tokens = 512
+# Controls randomness in the output (0.0 to 1.0)
+temperature = 1.0
+# Controls diversity via nucleus sampling (0.0 to 1.0)
+top_p = 0.95
+# Controls diversity via top-k sampling
+top_k = 40

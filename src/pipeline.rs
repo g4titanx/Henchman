@@ -9,8 +9,8 @@ use rand::Rng;
 use std::time::Duration;
 use tokio::select;
 
-use crate::{agent::Agent, config::Config, prompts::Prompts};
 use crate::twitter::TwitterCredentials;
+use crate::{agent::Agent, config::Config, prompts::Prompts};
 
 pub struct Pipeline {
     /// The Ai Agent
@@ -19,12 +19,9 @@ pub struct Pipeline {
 }
 
 impl Pipeline {
-    pub async fn new(
-        config: Config,
-        prompts: Prompts,
-    ) -> Self {
+    pub async fn new(config: Config, prompts: Prompts) -> Self {
         let pipeline_config: PipelineConfig = (&config).into();
-        
+
         let credentials = TwitterCredentials {
             username: config.x_username.clone(),
             consumer_key: config.x_consumer_key.clone(),

@@ -19,6 +19,7 @@ use crate::{
         TwitterClient,
     },
 };
+use crate::config::HyperbolicConfig;
 use anyhow::{anyhow, Result};
 
 /// The AI agent that tweets
@@ -153,6 +154,7 @@ impl Agent {
             .generate_text(
                 &tweet_prompt,
                 "Write a tweet that is less than 240 characters based on the context",
+                &self.config.hyperbolic,
             )
             .await?;
         if tweet_res.choices.is_empty() {
@@ -307,6 +309,7 @@ impl Agent {
             .generate_text(
                 &prompt_context,
                 "Respond only with your internal monologue based on the given context.",
+                &self.config.hyperbolic,
             )
             .await?;
         if res.choices.is_empty() {
@@ -374,6 +377,7 @@ impl Agent {
             .generate_text(
                 &follow_prompt,
                 "Respond with one username from the list. The response should only contain the username.",
+                &self.config.hyperbolic,
             )
             .await?;
         if res.choices.is_empty() {
@@ -402,6 +406,7 @@ impl Agent {
                 .generate_text(
                     tweet,
                     "Respond with a score from 1 to 10 for the given memory. Your answer should only contain an integer.",
+                    &self.config.hyperbolic,
                 )
                 .await
             else {
@@ -438,20 +443,25 @@ impl Agent {
         let mut tries = 0;
         while tries < max_tries {
             let Ok(mut res) = self.hyperbolic_client
-            .generate_text(&prompt_context, "Give a score from 1 to 10 for each of these tweets. Your response should be in the CSV format, where the first column is the id and the second column is the score. There should not be a headline.")
-            .await else {
+                .generate_text(
+                    &prompt_context,
+                    "Give a score from 1 to 10 for each of these tweets. Your response should be in the CSV format, where the first column is the id and the second column is the score. There should not be a headline.",
+                    &self.config.hyperbolic,
+                )
+                .await 
+            else {
                 continue;
             };
             if res.choices.is_empty() {
                 continue;
             }
             let scores = res.choices.swap_remove(0).message.content;
-            let scores = scores.split("\n").collect::<Vec<&str>>();
+            let scores = scores.split('\n').collect::<Vec<&str>>();
 
             let mut max_score = 0;
             let mut max_id = "";
             for score in scores {
-                let mut iter = score.split(",");
+                let mut iter = score.split(',');
                 let Some(id) = iter.next() else {
                     continue;
                 };
@@ -482,6 +492,7 @@ impl Agent {
                 .generate_text(
                     context,
                     &format!("Write a witty response to this tweet: {mention}"),
+                    &self.config.hyperbolic,
                 )
                 .await
             else {
@@ -517,6 +528,7 @@ struct AgentConfig {
     min_posting_score: u16,
     num_recent_posts: usize,
     min_mention_score: u8,
+    hyperbolic: HyperbolicConfig,
 }
 
 impl From<&Config> for AgentConfig {
@@ -529,6 +541,7 @@ impl From<&Config> for AgentConfig {
             min_posting_score: value.min_posting_score,
             num_recent_posts: value.num_recent_posts,
             min_mention_score: value.min_mention_score,
+            hyperbolic: value.hyperbolic.clone(),
         }
     }
 }
