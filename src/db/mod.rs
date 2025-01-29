@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use crate::twitter::api_types::TimelineTweet;
 
 use anyhow::{anyhow, Context, Result};
 use qdrant_client::{
@@ -18,6 +19,7 @@ pub mod types;
 const TWEET_IDS: &str = "tweet_ids";
 const MEMORY_DATA: &str = "memory-data";
 const USER_ID: &str = "user-id";
+const TWEET_BUFFER: &str = "tweet-buffer";
 
 pub struct Database {
     vec_db_client: Qdrant,
@@ -242,6 +244,34 @@ impl Database {
         }
 
         Ok(memories)
+    }
+    
+    pub fn store_buffered_tweet(&self, tweet: &TimelineTweet) -> Result<()> {
+        let cf = self.kv_db.cf_handle(TWEET_BUFFER)
+            .expect("failed to get tweet buffer cf handle");
+        let tweet_bytes = bincode::serialize(tweet)?;
+        self.kv_db
+            .put_cf(&cf, tweet.id.as_bytes(), &tweet_bytes)
+            .map_err(|e| anyhow!("{e:?}"))
+    }
+
+    pub fn get_buffered_tweets(&self, limit: usize) -> Result<Vec<TimelineTweet>> {
+        let cf = self.kv_db.cf_handle(TWEET_BUFFER)
+            .expect("failed to get tweet buffer cf handle");
+        let iter = self.kv_db.iterator_cf(cf, IteratorMode::Start);
+        let mut tweets = Vec::with_capacity(limit);
+        
+        for item in iter {
+            if tweets.len() >= limit {
+                break;
+            }
+            let (_, value) = item.map_err(|e| anyhow!("{e:?}"))?;
+            let tweet: TimelineTweet = bincode::deserialize(&value)
+                .map_err(|e| anyhow!("{e:?}"))?;
+            tweets.push(tweet);
+        }
+
+        Ok(tweets)
     }
 }
 

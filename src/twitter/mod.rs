@@ -66,20 +66,6 @@ impl TwitterClient {
             )
         };
 
-        //let res = self
-        //    .client
-        //    .get(url)
-        //    .send()
-        //    .await
-        //    .unwrap()
-        //    .text()
-        //    .await
-        //    .unwrap();
-
-        //println!("{res}");
-
-        //todo!()
-
         self.client
             .get(url)
             .send()

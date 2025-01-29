@@ -58,7 +58,7 @@ pub struct TimelineResponse {
     pub meta: TimelineMeta,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone, Serialize)]
 pub struct TimelineTweet {
     pub edit_history_tweet_ids: Vec<String>,
     pub article: Option<Article>,
@@ -68,7 +68,7 @@ pub struct TimelineTweet {
     pub username: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone, Serialize)]
 pub struct Article {
     pub title: String,
 }

@@ -22,9 +22,14 @@ impl HyperbolicClient {
         }
     }
 
-    pub async fn generate_text(&self, context: &str, prompt: &str, config: &HyperbolicConfig) -> Result<ApiResponse> {
+    pub async fn generate_text(
+        &self,
+        context: &str,
+        prompt: &str,
+        config: &HyperbolicConfig,
+    ) -> Result<ApiResponse> {
         let url = format!("{}/chat/completions", self.base_url);
-    
+
         let body = serde_json::json!({
             "messages": [
                 {
@@ -63,8 +68,8 @@ impl HyperbolicClient {
 
 #[cfg(test)]
 mod tests {
-    use crate::hyperbolic::HyperbolicClient;
     use crate::config::HyperbolicConfig;
+    use crate::hyperbolic::HyperbolicClient;
 
     #[ignore]
     #[tokio::test]
