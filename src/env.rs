@@ -49,20 +49,28 @@ pub async fn wait_for_api_keys() {
 async fn get_env_variables(
     State(shutdown_sender): State<Arc<Mutex<Option<Sender<()>>>>>,
     Json(env_variables): Json<EnvVariables>,
-) -> String {
-    ENV.set(env_variables).expect("Was unable to set ENV");
+) -> Result<String, String> {
+    // Set environment variables
+    ENV.set(env_variables)
+        .map_err(|_| "Failed to set environment variables")?;
 
     tracing::info!("Successfully set the ENV variables, shutting down server");
 
-    //Now that we have the ENV shutdown the server
-    // todo: clean this mess up
-    shutdown_sender
-        .lock()
-        .unwrap()
-        .take()
-        .unwrap()
-        .send(())
-        .unwrap();
+    // Handle shutdown
+    match shutdown_sender.lock() {
+        Ok(mut sender) => {
+            if let Some(s) = sender.take() {
+                if let Err(e) = s.send(()) {
+                    tracing::error!("Failed to send shutdown signal: {:?}", e);
+                    return Err("Failed to shutdown server".into());
+                }
+            }
+        }
+        Err(e) => {
+            tracing::error!("Failed to acquire shutdown sender lock: {}", e);
+            return Err("Failed to shutdown server".into());
+        }
+    }
 
-    "Successfully Set ENV variables".into()
+    Ok("Successfully set ENV variables".into())
 }

@@ -219,56 +219,58 @@ impl Agent {
         max_timeline_tweets: usize,
     ) -> Result<Vec<TimelineTweet>> {
         // First try to get tweets from buffer
-        let mut result_tweets = if let Ok(buffered) = self.database.get_buffered_tweets(max_timeline_tweets) {
-            buffered
-        } else {
-            Vec::new()
-        };
-    
+        let mut result_tweets =
+            if let Ok(buffered) = self.database.get_buffered_tweets(max_timeline_tweets) {
+                buffered
+            } else {
+                Vec::new()
+            };
+
         // If we need more tweets, get them from API
         if result_tweets.len() < max_timeline_tweets {
             let remaining = max_timeline_tweets - result_tweets.len();
-            
+
             let mut tweets = self
                 .twitter_client
                 .get_timeline(&self.user_id, Some(100))
                 .await?;
-    
+
             let usernames: HashMap<&String, &String> = tweets
                 .includes
                 .users
                 .iter()
                 .map(|u| (&u.id, &u.username))
                 .collect();
-    
+
             for tweet in tweets.data.iter_mut() {
                 if let Some(username) = usernames.get(&tweet.author_id) {
                     tweet.username = Some(String::from(*username));
                 }
             }
-    
+
             let new_tweets = tweets
                 .data
                 .into_iter()
-                .filter(|t| {
-                    match self.database.tweet_id_exists(&t.id) {
-                        Ok(exists) => !exists && t.username.is_some(),
-                        Err(e) => {
-                            tracing::warn!("Failed to check if tweet {} exists in db: {}", t.id, e);
-                            false
-                        }
+                .filter(|t| match self.database.tweet_id_exists(&t.id) {
+                    Ok(exists) => !exists && t.username.is_some(),
+                    Err(e) => {
+                        tracing::warn!("Failed to check if tweet {} exists in db: {}", t.id, e);
+                        false
                     }
                 })
                 .collect::<Vec<TimelineTweet>>();
-    
+
             // Buffer unused tweets for future use
-            if let Err(e) = self.buffer_unused_tweets(new_tweets.clone(), remaining).await {
+            if let Err(e) = self
+                .buffer_unused_tweets(new_tweets.clone(), remaining)
+                .await
+            {
                 tracing::warn!("Failed to buffer unused tweets: {}", e);
             }
-    
+
             // Take only what we need
             result_tweets.extend(new_tweets.into_iter().take(remaining));
-    
+
             // Mark used tweets as seen
             for tweet in &result_tweets {
                 if let Err(e) = self.database.insert_tweet_id(&tweet.id) {
@@ -276,7 +278,7 @@ impl Agent {
                 }
             }
         }
-    
+
         Ok(result_tweets)
     }
 
@@ -306,13 +308,11 @@ impl Agent {
         let tweets = mentions
             .data
             .into_iter()
-            .filter(|t| {
-                match self.database.tweet_id_exists(&t.id) {
-                    Ok(exists) => !exists && t.username.is_some(),
-                    Err(e) => {
-                        tracing::warn!("Failed to check if tweet {} exists in db: {}", t.id, e);
-                        false
-                    }
+            .filter(|t| match self.database.tweet_id_exists(&t.id) {
+                Ok(exists) => !exists && t.username.is_some(),
+                Err(e) => {
+                    tracing::warn!("Failed to check if tweet {} exists in db: {}", t.id, e);
+                    false
                 }
             })
             .take(max_num_mentions)
@@ -326,13 +326,13 @@ impl Agent {
     }
 
     pub async fn generate_short_term_memory(
-        &self, 
+        &self,
         context: Vec<String>,
         max_tries: u32,
     ) -> Result<String> {
         let prompt_context = self.prompts.get_short_term_memory_prompt(context);
         let mut tries = 0;
-        
+
         while tries < max_tries {
             let Ok(res) = self
                 .hyperbolic_client
@@ -346,17 +346,19 @@ impl Agent {
                 tries += 1;
                 continue;
             };
-            
+
             if let Some(message) = res.choices.first() {
                 return Ok(message.message.content.clone());
             }
-            
+
             tries += 1;
         }
-        
-        Err(anyhow!("Failed to generate short term memory after {max_tries} attempts"))
+
+        Err(anyhow!(
+            "Failed to generate short term memory after {max_tries} attempts"
+        ))
     }
-    
+
     pub async fn get_long_term_memories(
         &self,
         short_term_memory: &str,
@@ -556,14 +558,19 @@ impl Agent {
 
         Ok(())
     }
-    
-    async fn buffer_unused_tweets(&self, all_tweets: Vec<TimelineTweet>, used_count: usize) -> Result<()> {
+
+    async fn buffer_unused_tweets(
+        &self,
+        all_tweets: Vec<TimelineTweet>,
+        used_count: usize,
+    ) -> Result<()> {
         if used_count >= all_tweets.len() {
             return Ok(());
         }
 
         // Get the unused tweets
-        let unused_tweets = all_tweets.into_iter()
+        let unused_tweets = all_tweets
+            .into_iter()
             .skip(used_count)
             .filter(|t| t.username.is_some())
             .collect::<Vec<_>>();
