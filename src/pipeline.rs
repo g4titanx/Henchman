@@ -19,6 +19,7 @@ pub struct Pipeline {
 }
 
 impl Pipeline {
+    /// Creates a new Pipeline instance with the provided configuration and prompts
     pub async fn new(config: Config, prompts: Prompts) -> Self {
         let pipeline_config: PipelineConfig = (&config).into();
 
@@ -30,14 +31,9 @@ impl Pipeline {
             access_token_secret: config.x_access_token_secret.clone(),
         };
 
-        let agent: Agent = Agent::new(
-            credentials,
-            config,
-            generate_eth_private_key(), // Keep using this
-            prompts,
-        )
-        .await
-        .expect("Failed to create Agent");
+        let agent: Agent = Agent::new(credentials, config, generate_eth_private_key(), prompts)
+            .await
+            .expect("Failed to create Agent");
 
         Self {
             agent,
@@ -45,7 +41,14 @@ impl Pipeline {
         }
     }
 
-    /// Should not return until agent is shut down
+    /// Runs the main pipeline loop that simulates Twitter browsing behavior.
+    /// Alternates between:
+    /// 1. Waiting period (offline)
+    /// 2. Active scrolling period where the agent:
+    ///    - Processes timeline
+    ///    - Responds to mentions
+    ///    - Generates tweets
+    /// This pattern continues until shutdown is triggered.
     pub async fn run(&mut self) {
         // Generate Ethereum Address
 
@@ -85,12 +88,21 @@ impl Pipeline {
     }
 }
 
+/// Configuration for timing of the agent's activity cycles.
+/// Controls the duration of active and inactive periods to simulate
+/// natural Twitter usage patterns.
 struct PipelineConfig {
+    /// Minimum seconds to sleep between scrolling sessions
     scroll_sleep_min: u64,
+    /// Maximum seconds to sleep between scrolling sessions
     scroll_sleep_max: u64,
+    /// Minimum seconds for a scrolling session
     scroll_duration_min: u64,
+    /// Maximum seconds for a scrolling session
     scroll_duration_max: u64,
+    /// Minimum seconds between agent runs during active session
     run_sleep_min: u64,
+    /// Maximum seconds between agent runs during active session
     run_sleep_max: u64,
 }
 
@@ -160,6 +172,7 @@ impl Default for PipelineConfig {
     }
 }
 
+/// Generates a new Ethereum private key for the agent
 fn generate_eth_private_key() -> SecretKey {
     let mut rng = rand::thread_rng();
     let mut random_bytes = [0u8; 32];

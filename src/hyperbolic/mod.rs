@@ -1,3 +1,4 @@
+//! API client for interacting with the Hyperbolic LLM service
 use crate::config::HyperbolicConfig;
 
 use anyhow::{anyhow, Result};
@@ -6,13 +7,19 @@ use reqwest::Client;
 use self::api_types::ApiResponse;
 mod api_types;
 
+/// Client for making requests to the Hyperbolic API service.
+/// Handles authentication and text generation requests.
 pub struct HyperbolicClient {
+    /// Base URL for the Hyperbolic API
     base_url: String,
+    /// API key for authentication
     hyperbolic_api_key: String,
+    /// HTTP client for making requests
     client: Client,
 }
 
 impl HyperbolicClient {
+    /// Creates a new HyperbolicClient instance
     pub fn new(hyperbolic_api_key: String, base_url: String) -> Self {
         let client = Client::new();
         Self {
@@ -22,6 +29,7 @@ impl HyperbolicClient {
         }
     }
 
+    /// Generates text using the Hyperbolic LLM service
     pub async fn generate_text(
         &self,
         context: &str,

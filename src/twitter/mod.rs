@@ -1,4 +1,4 @@
-// Client that makes all requests to the twitter client
+//! Client that makes all requests to the twitter client
 
 use anyhow::{anyhow, Result};
 use reqwest_oauth1::{Client, DefaultSM, OAuthClientProvider, Secrets, Signer};
@@ -10,21 +10,32 @@ use crate::twitter::api_types::ApiResponse;
 
 use self::api_types::{FollowData, SentTweet, TimelineResponse, Tweet, TweetsResponse, User};
 
+/// Collection of Twitter API credentials required for authentication.
 #[derive(Clone)]
 pub struct TwitterCredentials {
+    /// Twitter username associated with these credentials
     pub username: String,
+    /// OAuth consumer key from Twitter developer portal
     pub consumer_key: String,
+    /// OAuth consumer secret from Twitter developer portal
     pub consumer_secret: String,
+    /// OAuth access token for user authentication
     pub access_token: String,
+    /// OAuth access token secret for user authentication
     pub access_token_secret: String,
 }
 
+/// Client for interacting with the Twitter/X API.
+/// Handles authentication and provides methods for common Twitter operations.
 pub struct TwitterClient {
+    /// OAuth-authenticated HTTP client for making API requests
     client: Client<Signer<'static, Secrets<'static>, DefaultSM>>,
+    /// Base URL for the Twitter API endpoints
     base_url: String,
 }
 
 impl TwitterClient {
+    /// Creates a new TwitterClient with the provided credentials.
     pub fn new(
         url: String,
         x_consumer_key: String,

@@ -16,17 +16,27 @@ use self::types::{Embedding, Memory, MemoryData};
 
 pub mod types;
 
+/// Column family for storing processed tweet IDs
 const TWEET_IDS: &str = "tweet_ids";
+/// Column family for storing memory data
 const MEMORY_DATA: &str = "memory-data";
+/// Column family for storing user IDs
 const USER_ID: &str = "user-id";
+/// Column family for buffering tweets
 const TWEET_BUFFER: &str = "tweet-buffer";
 
+/// Database provides a hybrid storage system combining vector-based similarity search (Qdrant)
+/// with traditional key-value storage (RocksDB). This system manages the AI agent's memory,
+/// tweet history, and user interactions.
 pub struct Database {
+    /// Client for the Qdrant vector database used for similarity search
     vec_db_client: Qdrant,
+    /// RocksDB instance for key-value storage
     kv_db: DB,
 }
 
 impl Database {
+    /// Creates a new Database instance by connecting to both Qdrant and RocksDB.
     pub fn new(vector_db_url: &str, kv_db_path: PathBuf) -> Result<Self> {
         let vec_db_client = Qdrant::from_url(vector_db_url).build()?;
 
@@ -43,6 +53,11 @@ impl Database {
         })
     }
 
+    /// Creates a new vector collection in Qdrant if it doesn't exist.
+    ///
+    /// # Arguments
+    /// * `collection_name` - Name of the collection to create
+    /// * `vector_dim` - Dimension of vectors to be stored (e.g., 1536 for OpenAI embeddings)
     pub async fn create_collection(&self, collection_name: &str, vector_dim: u64) -> Result<()> {
         if self
             .vec_db_client
@@ -62,6 +77,7 @@ impl Database {
         }
     }
 
+    /// Atomically inserts or updates memories in both vector and key-value stores.
     pub async fn upsert_memories(
         &self,
         collection_name: &str,
@@ -73,7 +89,6 @@ impl Database {
             match self.insert_memory_data(memory.data.clone()) {
                 Ok(_) => inserted_ids.push(memory.data.id),
                 Err(e) => {
-                    // Roll back any successful inserts
                     for id in inserted_ids {
                         let cf = self
                             .kv_db
@@ -123,6 +138,7 @@ impl Database {
         }
     }
 
+    /// Retrieves the k most similar memories to a given embedding using cosine similarity
     pub async fn get_k_most_similar_memories(
         &self,
         collection_name: &str,
@@ -161,6 +177,7 @@ impl Database {
         Ok(memories)
     }
 
+    /// Records a processed tweet ID to prevent duplicate processing
     pub fn insert_tweet_id(&self, tweet_id: &str) -> Result<()> {
         let tweed_id_cf = self
             .kv_db
@@ -171,6 +188,7 @@ impl Database {
             .map_err(|e| anyhow!("{e:?}"))
     }
 
+    /// Checks if a user ID exists in the database
     pub fn user_id_exists(&self, user_id: &str) -> Result<bool> {
         let user_id_cf = self
             .kv_db
@@ -182,6 +200,7 @@ impl Database {
             .map_err(|e| anyhow!("{e:?}"))
     }
 
+    /// Records a user ID, typically used for tracking followed users
     pub fn insert_user_id(&self, user_id: &str) -> Result<()> {
         let user_id_cf = self
             .kv_db
@@ -192,6 +211,7 @@ impl Database {
             .map_err(|e| anyhow!("{e:?}"))
     }
 
+    /// Checks if a tweet has been previously processed
     pub fn tweet_id_exists(&self, tweet_id: &str) -> Result<bool> {
         let tweed_id_cf = self
             .kv_db
@@ -203,6 +223,7 @@ impl Database {
             .map_err(|e| anyhow!("{e:?}"))
     }
 
+    /// Inserts memory data into the key-value store
     fn insert_memory_data(&self, data: MemoryData) -> Result<()> {
         let cf = self
             .kv_db
@@ -214,6 +235,7 @@ impl Database {
             .map_err(|e| anyhow!("{e:?}"))
     }
 
+    /// Retrieves memory data by ID
     fn get_memory(&self, id: u128) -> Result<MemoryData> {
         let cf = self
             .kv_db
@@ -227,6 +249,7 @@ impl Database {
         bincode::deserialize::<MemoryData>(&data).map_err(|e| anyhow!("{e:?}"))
     }
 
+    /// Retrieves the most recent memories, quite useful for maintaining context
     pub fn get_recent_memories(&self, max_num: usize) -> Result<Vec<MemoryData>> {
         let sent_tweed_cf = self
             .kv_db
@@ -246,6 +269,7 @@ impl Database {
         Ok(memories)
     }
 
+    /// Stores a tweet in the buffer for later processing
     pub fn store_buffered_tweet(&self, tweet: &TimelineTweet) -> Result<()> {
         let cf = self
             .kv_db
@@ -257,6 +281,7 @@ impl Database {
             .map_err(|e| anyhow!("{e:?}"))
     }
 
+    /// Retrieves buffered tweets up to the specified limit
     pub fn get_buffered_tweets(&self, limit: usize) -> Result<Vec<TimelineTweet>> {
         let cf = self
             .kv_db

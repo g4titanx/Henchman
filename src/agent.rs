@@ -22,26 +22,47 @@ use crate::{
 };
 use anyhow::{anyhow, Result};
 
-/// The AI agent that tweets
-/// Should contain short term memory, long term memory, external context
-
+/// Collection used for long-term memory storage in the vector database
 const LONG_TERM_MEMORY: &str = "long-term-memory";
+/// Base URL for Twitter/X API v2
 const X_API_URL: &str = "https://api.twitter.com/2";
+/// Base URL for Hyperbolic API
 const HYPERBOLIC_API_URL: &str = "https://api.hyperbolic.xyz/v1";
+/// Base URL for OpenAI API
 const OPEN_AI_API_URL: &str = "https://api.openai.com/v1";
 
+/// The AI Agent that manages the Twitter account.
+///
+/// This agent combines several components to create an autonomous Twitter presence:
+/// - Short-term memory for recent context
+/// - Long-term memory for persistent knowledge
+/// - External context from Twitter interactions
+/// - LLM integration for generating responses
+/// - Vector database for semantic search
+///
+/// The agent periodically processes its timeline, responds to mentions,
+/// generates new tweets, and maintains memory of past interactions.
 pub struct Agent {
+    /// Templates for different types of prompts
     prompts: Prompts,
+    /// Client for Twitter API interactions
     twitter_client: TwitterClient,
+    /// Client for LLM text generation
     hyperbolic_client: HyperbolicClient,
+    /// Client for generating text embeddings
     openai_client: OpenAIClient,
+    /// Database for storing memories and tracking state
     database: Database,
+    /// Twitter user ID of the agent
     user_id: String,
+    /// Ethereum private key for potential onchain actions
     _eth_private_key: SecretKey,
+    /// Configuration parameters for the agent
     config: AgentConfig,
 }
 
 impl Agent {
+    /// Creates a new Agent instance with the provided configuration and credentials.
     pub async fn new(
         credentials: TwitterCredentials,
         config: Config,
@@ -95,6 +116,16 @@ impl Agent {
         })
     }
 
+    /// Executes one iteration of the agent's main loop.
+    /// This process includes:
+    /// 1. Retrieving recent posts
+    /// 2. Fetching external context (timeline, mentions)
+    /// 3. Generating short-term memory
+    /// 4. Retrieving relevant long-term memories
+    /// 5. Generating and scoring new tweets
+    /// 6. Storing significant memories
+    /// 7. Posting tweets that meet criteria
+    /// 8. Responding to mentions
     pub async fn run(&self) -> Result<()> {
         // Step 1: retrieve own recent posts
         tracing::info!("Reading recent posts...");
@@ -325,6 +356,7 @@ impl Agent {
         Ok(tweets)
     }
 
+    /// Generates short-term memory based on recent context
     pub async fn generate_short_term_memory(
         &self,
         context: Vec<String>,
@@ -359,6 +391,7 @@ impl Agent {
         ))
     }
 
+    /// Retrieves relevant long-term memories based on current context
     pub async fn get_long_term_memories(
         &self,
         short_term_memory: &str,
@@ -439,6 +472,7 @@ impl Agent {
         Ok(())
     }
 
+    /// Scores the significance of a tweet
     pub async fn score_tweet(&self, tweet: &str, max_tries: u32) -> Result<u16> {
         let mut tries = 0;
         while tries < max_tries {
@@ -467,6 +501,7 @@ impl Agent {
         Err(anyhow!("Failed to generate tweet score"))
     }
 
+    /// Processes and responds to mentions based on context
     pub async fn respond_to_mentions(
         &self,
         mentions: &[Tweet],
@@ -559,6 +594,7 @@ impl Agent {
         Ok(())
     }
 
+    /// Stores unused timeline tweets in buffer for future use
     async fn buffer_unused_tweets(
         &self,
         all_tweets: Vec<TimelineTweet>,
@@ -601,14 +637,23 @@ impl Agent {
     }
 }
 
+/// Configuration parameters for the Agent
 struct AgentConfig {
+    /// Maximum number of mentions to process per run
     max_num_mentions: usize,
+    /// Maximum number of timeline tweets to process
     max_timeline_tweets: usize,
+    /// Number of long-term memories to retrieve for context
     num_long_term_memories: u64,
+    /// Minimum score required to store a memory
     min_storing_memory_score: u16,
+    /// Minimum score required to post a tweet
     min_posting_score: u16,
+    /// Number of recent posts to use for context
     num_recent_posts: usize,
+    /// Minimum score required to respond to a mention
     min_mention_score: u8,
+    /// Configuration for the Hyperbolic LLM client
     hyperbolic: HyperbolicConfig,
 }
 
