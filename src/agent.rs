@@ -69,7 +69,7 @@ impl Agent {
         // `docker pull qdrant/qdrant`
         // and then run it with
         // `docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant`
-        let database = Database::new("http://localhost:6334", PathBuf::from(&config.kv_db_path))?; // TODO: get url from config
+        let database = Database::new(&config.vector_db_url, PathBuf::from(&config.kv_db_path))?;
 
         let hyperbolic_client =
             HyperbolicClient::new(env.hyperbolic_api_key.clone(), HYPERBOLIC_API_URL.into());

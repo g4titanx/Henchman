@@ -34,6 +34,7 @@ pub struct Config {
     pub run_sleep: Option<(u64, u64)>,
     pub release_credentials: u64,
     pub hyperbolic: HyperbolicConfig,
+    pub vector_db_url: String,
 }
 
 impl Config {

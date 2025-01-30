@@ -28,6 +28,8 @@ num_recent_posts = 5
 min_mention_score = 5
 # in seconds how long the bot will run before handing over the account credentials
 release_credentials = 604800
+# The URL for the vector database (Qdrant)
+vector_db_url = "http://localhost:6334"
 
 [hyperbolic]
 # The model to use for text generation
