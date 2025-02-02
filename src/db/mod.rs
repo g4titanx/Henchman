@@ -224,7 +224,7 @@ impl Database {
     }
 
     /// Inserts memory data into the key-value store
-    fn insert_memory_data(&self, data: MemoryData) -> Result<()> {
+    pub fn insert_memory_data(&self, data: MemoryData) -> Result<()> {
         let cf = self
             .kv_db
             .cf_handle(MEMORY_DATA)

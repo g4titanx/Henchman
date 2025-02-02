@@ -91,7 +91,7 @@ impl Pipeline {
 /// Configuration for timing of the agent's activity cycles.
 /// Controls the duration of active and inactive periods to simulate
 /// natural Twitter usage patterns.
-struct PipelineConfig {
+pub struct PipelineConfig {
     /// Minimum seconds to sleep between scrolling sessions
     scroll_sleep_min: u64,
     /// Maximum seconds to sleep between scrolling sessions

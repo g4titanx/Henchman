@@ -1,30 +1,8 @@
 //! AI Agent for Twitter/X
 
-use config::Config;
-use env::wait_for_api_keys;
-use pipeline::Pipeline;
-use prompts::Prompts;
 use std::error::Error;
+use tee_ai_agent::{config::Config, env::wait_for_api_keys, pipeline::Pipeline, prompts::Prompts};
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
-
-/// Core agent implementation and behavior
-pub mod agent;
-/// Configuration and environment settings
-pub mod config;
-/// Database interactions for memory storage
-pub mod db;
-/// Environment variable and API key management
-pub mod env;
-/// Hyperbolic LLM client integration
-pub mod hyperbolic;
-/// OpenAI embeddings client integration
-pub mod openai;
-/// Main execution pipeline management
-pub mod pipeline;
-/// Prompt templates and generation
-pub mod prompts;
-/// Twitter API client integration
-pub mod twitter;
 
 /// Entry point for the AI agent system.
 ///
