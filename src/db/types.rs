@@ -39,7 +39,9 @@ impl Embedding {
     /// Creates a new Embedding instance
     ///
     /// # Example
-    /// ```no_run
+    /// ```
+    /// use tee_ai_agent::db::types::Embedding;
+    /// 
     /// let embedding = Embedding::new(1, vec![0.1, 0.2, 0.3]);
     /// ```
     pub fn new(id: u128, data: Vec<f32>) -> Self {
@@ -51,6 +53,8 @@ impl Embedding {
     ///
     /// # Example
     /// ```
+    /// use tee_ai_agent::db::types::Embedding;
+    /// 
     /// let emb1 = Embedding::new(1, vec![1.0, 0.0]);
     /// let emb2 = Embedding::new(2, vec![0.0, 1.0]);
     /// let similarity = emb1.cosine_similarity(&emb2); // Returns 0.0 (perpendicular vectors)
