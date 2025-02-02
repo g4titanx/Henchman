@@ -56,7 +56,15 @@ impl Embedding {
     /// let similarity = emb1.cosine_similarity(&emb2); // Returns 0.0 (perpendicular vectors)
     /// ```
     pub fn cosine_similarity(&self, rhs: &Embedding) -> f32 {
-        self.dot(rhs) / (self.l2_norm() * rhs.l2_norm())
+        let dot = self.dot(rhs);
+        let norm1 = self.l2_norm();
+        let norm2 = rhs.l2_norm();
+        
+        if norm1 == 0.0 || norm2 == 0.0 {
+            return 0.0; // Handle zero vectors
+        }
+        
+        dot / (norm1 * norm2)
     }
 
     /// Calculates the dot product between this embedding and another
@@ -77,13 +85,16 @@ impl Embedding {
             .zip(rhs.data.iter())
             .map(|(x, y)| x * y)
             .sum::<f32>()
-            .sqrt()
     }
 
     /// Calculates the L2 (Euclidean) norm of the embedding vector.
-    /// and then it returns an `f32` - L2 norm value
+    /// Returns an `f32` - L2 norm value
     pub fn l2_norm(&self) -> f32 {
-        self.data.iter().map(|x| x.powf(2.0)).sum::<f32>().sqrt()
+        self.data
+            .iter()
+            .map(|x| x * x)
+            .sum::<f32>()
+            .sqrt()
     }
 }
 
