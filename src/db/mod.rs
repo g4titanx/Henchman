@@ -30,9 +30,9 @@ const TWEET_BUFFER: &str = "tweet-buffer";
 /// tweet history, and user interactions.
 pub struct Database {
     /// Client for the Qdrant vector database used for similarity search
-    vec_db_client: Qdrant,
+    pub vec_db_client: Qdrant,
     /// RocksDB instance for key-value storage
-    kv_db: DB,
+    pub kv_db: DB,
 }
 
 impl Database {

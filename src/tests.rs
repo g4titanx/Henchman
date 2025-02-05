@@ -1,122 +1,129 @@
-// use tempfile::tempdir;
-// use anyhow::Result;
+use tempfile::tempdir;
+use anyhow::Result;
+use uuid::Uuid;
 
 use crate::{
-    // db::{Database, types::{Memory, MemoryData, Embedding}},
+    db::{Database, types::{Memory, MemoryData, Embedding}},
     prompts::Prompts,
 };
 
-// /// Tests for the Database component
-// mod database_tests {
-//     use super::*;
+/// Tests for the Database component
+mod database_tests {
+    use super::*;
     
-//     /// Helper function to create a temporary test database
-//     async fn setup_test_db() -> Result<(Database, tempfile::TempDir)> {
-//         let temp_dir = tempdir()?;
-//         let db_path = temp_dir.path().join("test_db");
-//         let db = Database::new("http://localhost:6334", db_path)?;
+    /// Helper function to create a temporary test database
+    async fn setup_test_db() -> Result<(Database, tempfile::TempDir, String)> {
+        let temp_dir = tempdir()?;
+        let db_path = temp_dir.path().join("test_db");
+        let db = Database::new("http://localhost:6334", db_path)?;
         
-//         // Create required collections
-//         db.create_collection("test_memories", 1536).await?;
+        // Generate a unique collection name
+        let collection_name = format!("test_memories_{}", Uuid::new_v4());
         
-//         Ok((db, temp_dir))
-//     }
+        // Create the collection
+        db.create_collection(&collection_name, 1536).await?;
+        
+        Ok((db, temp_dir, collection_name))
+    }
 
-//     #[tokio::test]
-//     async fn test_memory_storage_and_retrieval() -> Result<()> {
-//         let (db, _temp) = setup_test_db().await?;
+    #[tokio::test]
+    async fn test_memory_storage_and_retrieval() -> Result<()> {
+        let (db, _temp, collection_name) = setup_test_db().await?;
 
-//         // Create test memories
-//         let memories = vec![
-//             Memory {
-//                 data: MemoryData {
-//                     id: 1,
-//                     score: 8,
-//                     content: "Ethereum hit new ATH!".to_string(),
-//                 },
-//                 embedding: Embedding::new(1, vec![0.5; 1536]),
-//             },
-//             Memory {
-//                 data: MemoryData {
-//                     id: 2,
-//                     score: 5,
-//                     content: "Just another day in crypto".to_string(),
-//                 },
-//                 embedding: Embedding::new(2, vec![0.3; 1536]),
-//             },
-//         ];
+        // Create test memories
+        let memories = vec![
+            Memory {
+                data: MemoryData {
+                    id: 1,
+                    score: 8,
+                    content: "Ethereum hit new ATH!".to_string(),
+                },
+                embedding: Embedding::new(1, vec![0.5; 1536]),
+            },
+            Memory {
+                data: MemoryData {
+                    id: 2,
+                    score: 5,
+                    content: "Just another day in crypto".to_string(),
+                },
+                embedding: Embedding::new(2, vec![0.3; 1536]),
+            },
+        ];
 
-//         // Store memories
-//         db.upsert_memories("test_memories", memories).await?;
+        // Store memories using the unique collection name
+        db.upsert_memories(&collection_name, memories.clone()).await?;
 
-//         // Test retrieval 
-//         let query_embedding = Embedding::new(0, vec![0.5; 1536]);
-//         let results = db.get_k_most_similar_memories("test_memories", query_embedding, 2).await?;
+        // Test retrieval 
+        let query_embedding = Embedding::new(0, vec![0.5; 1536]);
+        let results = db.get_k_most_similar_memories(&collection_name, query_embedding, 2).await?;
 
-//         assert_eq!(results.len(), 2);
-//         assert!(results.iter().any(|m| m.content.contains("ATH")));
+        assert_eq!(results.len(), 2);
+        assert!(results.iter().any(|m| m.content.contains("ATH")));
 
-//         Ok(())
-//     }
+        Ok(())
+    }
 
-//     #[tokio::test]
-//     async fn test_tweet_id_tracking() -> Result<()> {
-//         let (db, _temp) = setup_test_db().await?;
+    #[tokio::test]
+    async fn test_tweet_id_tracking() -> Result<()> {
+        let (db, _temp, _collection_name) = setup_test_db().await?;
         
-//         let tweet_id = "123456789";
+        let tweet_id = "123456789";
         
-//         // Initially tweet should not exist
-//         assert!(!db.tweet_id_exists(tweet_id)?);
+        // Initially tweet should not exist
+        assert!(!db.tweet_id_exists(tweet_id)?);
         
-//         // Insert tweet
-//         db.insert_tweet_id(tweet_id)?;
+        // Insert tweet
+        db.insert_tweet_id(tweet_id)?;
         
-//         // Now tweet should exist
-//         assert!(db.tweet_id_exists(tweet_id)?);
+        // Now tweet should exist
+        assert!(db.tweet_id_exists(tweet_id)?);
         
-//         Ok(())
-//     }
+        Ok(())
+    }
 
-//     #[tokio::test]
-//     async fn test_user_id_tracking() -> Result<()> {
-//         let (db, _temp) = setup_test_db().await?;
+    #[tokio::test]
+    async fn test_user_id_tracking() -> Result<()> {
+        let (db, _temp, _collection_name) = setup_test_db().await?;
         
-//         let user_id = "user_123";
+        let user_id = "user_123";
         
-//         // Initially user should not exist
-//         assert!(!db.user_id_exists(user_id)?);
+        // Initially user should not exist
+        assert!(!db.user_id_exists(user_id)?);
         
-//         // Insert user
-//         db.insert_user_id(user_id)?;
+        // Insert user
+        db.insert_user_id(user_id)?;
         
-//         // Now user should exist
-//         assert!(db.user_id_exists(user_id)?);
+        // Now user should exist
+        assert!(db.user_id_exists(user_id)?);
         
-//         Ok(())
-//     }
+        Ok(())
+    }
     
-//     #[tokio::test]
-//     async fn test_recent_memories() -> Result<()> {
-//         let (db, _temp) = setup_test_db().await?;
+    #[tokio::test]
+    async fn test_recent_memories() -> Result<()> {
+        let (db, _temp, collection_name) = setup_test_db().await?;
 
-//         // Insert test memories in order
-//         for i in 1..=5 {
-//             db.insert_memory_data(MemoryData {
-//                 id: i,
-//                 score: 5,
-//                 content: format!("Memory {}", i),
-//             })?;
-//         }
+        // Insert test memories in order
+        for i in 1..=5 {
+            db.upsert_memories(&collection_name, vec![Memory {
+                data: MemoryData {
+                    id: i,
+                    score: 5,
+                    content: format!("Memory {}", i),
+                },
+                embedding: Embedding::new(i, vec![0.5; 1536]),
+            }]).await?;
+        }
 
-//         // Test retrieval with limit
-//         let recent = db.get_recent_memories(3)?;
-//         assert_eq!(recent.len(), 3);
-//         assert_eq!(recent[0].content, "Memory 5"); // Most recent first
-//         assert_eq!(recent[2].content, "Memory 3");
+        // Test retrieval with limit
+        let recent = db.get_recent_memories(3)?;
+        assert_eq!(recent.len(), 3);
+        assert_eq!(recent[0].content, "Memory 5"); // Most recent first
+        assert_eq!(recent[2].content, "Memory 3");
 
-//         Ok(())
-//     }
-// }
+        Ok(())
+    }
+}
 
 /// Tests for the Prompts component
 mod prompts_tests {

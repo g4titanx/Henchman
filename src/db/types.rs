@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 /// Memory combines vector embeddings with associated metadata
 /// This structure is used to store and retrieve AI agent memories
 /// using both vector similarity search and traditional key-value lookups
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Memory {
     /// Vector embedding for similarity search
     pub embedding: Embedding,
@@ -15,7 +15,7 @@ pub struct Memory {
 
 /// Embedding represents a vector embedding with associated operations for similarity calculations
 /// Used primarily for semantic search of memories using cosine similarity
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Embedding {
     /// Unique identifier for the embedding
     pub id: u128,
